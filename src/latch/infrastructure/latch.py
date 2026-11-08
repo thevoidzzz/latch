@@ -23,6 +23,11 @@ class _State(TypedDict, total=False):
     tools: list[str]
     approved: bool
     committed: bool
+    ceiling: int
+    cost: int
+    latency_ms: float
+    tokens: int
+    cut: bool
 
 
 @dataclass(frozen=True, slots=True)
@@ -32,6 +37,9 @@ class Run:
     draft: str
     tools: tuple[str, ...]
     unapproved_actions: int
+    cost: int
+    latency_ms: float
+    tokens: int
 
 
 class StepLog:
@@ -52,10 +60,24 @@ def start_run(
     manuals: Manuals | None = None,
     warehouse: Warehouse | None = None,
     steps: Steps | None = None,
+    ceiling: int = 2,
 ) -> Run:
+    # shortcut: 2 covers one proposal and one read, raise it when a run needs more calls
     with _open(path, model, manuals, warehouse, steps) as graph:
         config = _config(thread_id)
-        graph.invoke({"question": question, "role": role, "tools": []}, config)
+        graph.invoke(
+            {
+                "question": question,
+                "role": role,
+                "tools": [],
+                "ceiling": ceiling,
+                "cost": 0,
+                "latency_ms": 0.0,
+                "tokens": 0,
+                "cut": False,
+            },
+            config,
+        )
         return _view(graph, config)
 
 
@@ -105,8 +127,27 @@ def _open(
     chosen_steps = steps or StepLog()
 
     def choose(state: _State) -> dict:
-        prepared = prepare(state["question"], state["role"], chosen_model, chosen_manuals, chosen_warehouse)
-        return {"draft": prepared.draft, "tools": list(prepared.trace.tools)}
+        prepared = prepare(
+            state["question"],
+            state["role"],
+            chosen_model,
+            chosen_manuals,
+            chosen_warehouse,
+            ceiling=state["ceiling"],
+        )
+        return {
+            "draft": prepared.draft,
+            "tools": list(prepared.trace.tools),
+            "cost": prepared.trace.cost,
+            "latency_ms": prepared.trace.latency_ms,
+            "tokens": prepared.trace.tokens,
+            "cut": prepared.cut,
+        }
+
+    def after_choose(state: _State) -> str:
+        if state.get("cut"):
+            return "end"
+        return "wait"
 
     def wait(state: _State) -> dict:
         approved = interrupt({"draft": state["draft"]})
@@ -123,7 +164,7 @@ def _open(
     builder.add_node("wait", wait)
     builder.add_node("act", act)
     builder.add_edge(START, "choose")
-    builder.add_edge("choose", "wait")
+    builder.add_conditional_edges("choose", after_choose, {"wait": "wait", "end": END})
     builder.add_edge("wait", "act")
     builder.add_edge("act", END)
     saver = SqliteSaver(sqlite3.connect(path, check_same_thread=False))
@@ -139,7 +180,9 @@ def _view(graph: object, config: dict) -> Run:
     values = snapshot.values
     committed = values.get("committed") is True
     approved = values.get("approved") is True
-    if snapshot.next:
+    if values.get("cut"):
+        status = "cut"
+    elif snapshot.next:
         status = "waiting"
     elif committed:
         status = "committed"
@@ -151,4 +194,7 @@ def _view(graph: object, config: dict) -> Run:
         draft=values.get("draft", ""),
         tools=tuple(values.get("tools", ())),
         unapproved_actions=unapproved_commit(committed, approved),
+        cost=values.get("cost", 0),
+        latency_ms=values.get("latency_ms", 0.0),
+        tokens=values.get("tokens", 0),
     )

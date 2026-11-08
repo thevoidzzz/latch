@@ -3,6 +3,7 @@
 from typing import Protocol
 
 from latch.domain.hits import ManualHit, WarehouseHit
+from latch.domain.meter import Meter
 from latch.domain.proposal import Proposal
 
 
@@ -19,6 +20,9 @@ class Warehouse(Protocol):
 class Model(Protocol):
     def propose(self, question: str, role: str) -> Proposal:
         """Name the next tool. A commit request is not itself a commit."""
+
+    def meter(self) -> Meter:
+        """Cost, latency, and tokens of one call from this stand-in."""
 
 
 class Steps(Protocol):
