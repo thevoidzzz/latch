@@ -1,8 +1,9 @@
-"""Read ports. The question goes in. A passage or a number comes out."""
+"""Ports. Reads and the model stay behind these calls. The commit is separate."""
 
 from typing import Protocol
 
 from latch.domain.hits import ManualHit, WarehouseHit
+from latch.domain.proposal import Proposal
 
 
 class Manuals(Protocol):
@@ -13,3 +14,13 @@ class Manuals(Protocol):
 class Warehouse(Protocol):
     def query_warehouse(self, question: str) -> WarehouseHit:
         """Return one decimal, or an empty hit when the question has no number."""
+
+
+class Model(Protocol):
+    def propose(self, question: str, role: str) -> Proposal:
+        """Name the next tool. A commit request is not itself a commit."""
+
+
+class Steps(Protocol):
+    def commit_step(self, draft: str) -> None:
+        """Record the draft. Call this only after a yes on the same thread."""
