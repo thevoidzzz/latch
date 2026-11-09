@@ -12,6 +12,7 @@ ENTRYPOINT ["python", "-m", "latch.api"]
 FROM runtime AS tests
 COPY tests ./tests
 COPY compose.yaml Dockerfile ./
+COPY .devcontainer ./.devcontainer
 RUN pip install --no-cache-dir ".[dev]" && rm -rf src
 ENTRYPOINT ["pytest"]
 CMD ["-q"]

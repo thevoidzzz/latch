@@ -32,6 +32,36 @@ The image runs the same suite and uses no API key. Compose publishes port 8000 a
 docker compose run --rm --build tests
 ```
 
+## Try it
+
+Create a codespace on the 2-core machine. It uses the default image and installs the package. Delete the codespace when you finish.
+
+```bash
+python -m latch
+python -m latch.api
+```
+
+`python -m latch` prints the report above. With the API running, copy the `id` into the second request from another terminal:
+
+```bash
+curl -s -X POST localhost:8000/v1/runs \
+  -H 'content-type: application/json' \
+  -d '{"question":"Where is the handoff logged?","role":"operator"}'
+curl -s -X POST localhost:8000/v1/runs/ID/approval \
+  -H 'content-type: application/json' \
+  -d '{"approved":true}'
+```
+
+The first body has `"status": "waiting"`. The second, after a yes, has `"status": "committed"`.
+
+## Live reads
+
+`python -m latch` ignores `LATCH_MANUALS_URL` and `LATCH_WAREHOUSE_URL`. The API uses a URL when it is set. A manuals URL receives `POST /v1/answers` with `question` and `role`, and the draft is the first citation `excerpt`. A warehouse URL receives `POST /v1/answers` with `question`, and the draft is the `value` string. A refusal is an empty hit. A peer that does not answer is HTTP 503. No API key is sent.
+
+```bash
+LATCH_MANUALS_URL=http://127.0.0.1:8001 LATCH_WAREHOUSE_URL=http://127.0.0.1:8002 python -m latch.api
+```
+
 ## Contributing
 
 Open a pull request against `main`. The `test` check has to pass before merge.
