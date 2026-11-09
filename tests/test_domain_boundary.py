@@ -3,8 +3,16 @@
 import ast
 from pathlib import Path
 
-_PACKAGE = Path(__file__).resolve().parents[1] / "src" / "latch"
-_ROOTS = (_PACKAGE / "domain", _PACKAGE / "application")
+def _package() -> Path:
+    source = Path(__file__).resolve().parents[1] / "src" / "latch"
+    if source.is_dir():
+        return source
+    import latch
+
+    return Path(latch.__file__).resolve().parent
+
+
+_ROOTS = (_package() / "domain", _package() / "application")
 _FORBIDDEN_PREFIXES = (
     "latch.infrastructure",
     "latch.api",

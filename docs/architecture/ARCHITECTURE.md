@@ -76,6 +76,10 @@ La traza se queda en el proceso. El check no configura un host.
 
 El README, la API, los tests, los commits, los nombres de herramienta y el guion del sustituto están en inglés. Esta arquitectura y los ADR están en español. [ADR-0006](../adr/0006-public-text-is-english.md).
 
+## Imagen
+
+La imagen corre la misma suite, sin clave. Compose publica el puerto 8000 y no publica una base. El checkpoint sigue siendo un archivo. [ADR-0005](../adr/0005-the-checkpoint-is-a-file.md).
+
 ## Versión siguiente, todavía no
 
 Un cliente hacia un servicio vivo de lecturas, un sink con host y una base publicada. Esas corridas se fechan y no sustituyen al sustituto en el check. Esta versión no las abre.

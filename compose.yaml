@@ -1,0 +1,14 @@
+services:
+  latch:
+    build:
+      context: .
+      target: runtime
+    environment:
+      LATCH_CHECKPOINT: /tmp/latch.sqlite
+    ports:
+      - "8000:8000"
+
+  tests:
+    build:
+      context: .
+      target: tests

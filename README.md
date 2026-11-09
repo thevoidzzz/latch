@@ -24,6 +24,14 @@ pip install -e ".[dev]"
 pytest
 ```
 
+## Image
+
+The image runs the same suite and uses no API key. Compose publishes port 8000 and does not publish a database.
+
+```bash
+docker compose run --rm --build tests
+```
+
 ## Contributing
 
 Open a pull request against `main`. The `test` check has to pass before merge.
