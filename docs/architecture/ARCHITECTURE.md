@@ -37,6 +37,10 @@ sequenceDiagram
 
 `search_manuals` recibe la pregunta y el rol. `query_warehouse` recibe la pregunta. `commit_step` recibe el borrador y corre una sola vez, después del sí de ese hilo. [ADR-0001](../adr/0001-the-action-waits.md).
 
+`POST /v1/runs` abre esa corrida y devuelve `waiting` con el borrador. `POST /v1/runs/{id}/approval` reanuda el mismo hilo. Un no no ejecuta `commit_step`. Un cuerpo inválido responde `400` con `application/problem+json`. El proceso publica solo el puerto 8000.
+
+Las mismas dos lecturas se exponen como herramientas MCP sobre los dobles de esta versión. No es otro servicio y no abre la red. `commit_step` no está en esa superficie.
+
 Si la siguiente llamada pasaría el tope, la corrida queda cortada y `commit_step` no corre. [ADR-0003](../adr/0003-the-ceiling-cuts.md).
 
 La espera vive en un archivo sqlite junto al proceso. No se publica un puerto de base. [ADR-0005](../adr/0005-the-checkpoint-is-a-file.md).
@@ -71,6 +75,10 @@ La traza se queda en el proceso. El check no configura un host.
 ## Idioma
 
 El README, la API, los tests, los commits, los nombres de herramienta y el guion del sustituto están en inglés. Esta arquitectura y los ADR están en español. [ADR-0006](../adr/0006-public-text-is-english.md).
+
+## Imagen
+
+La imagen corre la misma suite, sin clave. Compose publica el puerto 8000 y no publica una base. El checkpoint sigue siendo un archivo. [ADR-0005](../adr/0005-the-checkpoint-is-a-file.md).
 
 ## Versión siguiente, todavía no
 
