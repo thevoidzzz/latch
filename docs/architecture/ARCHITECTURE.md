@@ -80,6 +80,10 @@ El README, la API, los tests, los commits, los nombres de herramienta y el guion
 
 La imagen corre la misma suite, sin clave. Compose publica el puerto 8000 y no publica una base. El checkpoint sigue siendo un archivo. [ADR-0005](../adr/0005-the-checkpoint-is-a-file.md).
 
+## Prueba
+
+El codespace usa la imagen Linux por defecto y 2 núcleos. No hay prebuild. El README corre el sustituto y la API en el puerto 8000. El checkpoint sigue siendo un archivo. Borrar el codespace apaga la prueba.
+
 ## Versión siguiente, todavía no
 
 Un cliente hacia un servicio vivo de lecturas, un sink con host y una base publicada. Esas corridas se fechan y no sustituyen al sustituto en el check. Esta versión no las abre.
