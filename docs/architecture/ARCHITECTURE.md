@@ -39,6 +39,8 @@ sequenceDiagram
 
 `POST /v1/runs` abre esa corrida y devuelve `waiting` con el borrador. `POST /v1/runs/{id}/approval` reanuda el mismo hilo. Un no no ejecuta `commit_step`. Un cuerpo inválido responde `400` con `application/problem+json`. El proceso publica solo el puerto 8000.
 
+Las mismas dos lecturas se exponen como herramientas MCP sobre los dobles de esta versión. No es otro servicio y no abre la red. `commit_step` no está en esa superficie.
+
 Si la siguiente llamada pasaría el tope, la corrida queda cortada y `commit_step` no corre. [ADR-0003](../adr/0003-the-ceiling-cuts.md).
 
 La espera vive en un archivo sqlite junto al proceso. No se publica un puerto de base. [ADR-0005](../adr/0005-the-checkpoint-is-a-file.md).

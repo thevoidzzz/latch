@@ -12,6 +12,7 @@ _FORBIDDEN_PREFIXES = (
     "httpx",
     "langgraph",
     "langfuse",
+    "mcp",
     "openai",
 )
 
