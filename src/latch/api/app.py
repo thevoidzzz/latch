@@ -8,7 +8,8 @@ from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
-from latch.application.ports import Steps
+from latch.application.ports import Manuals, Steps, Warehouse
+from latch.domain.errors import ReadUnavailable
 from latch.infrastructure.latch import Run, StepLog, decide, start_run
 
 logger = logging.getLogger(__name__)
@@ -32,10 +33,17 @@ class Approval(BaseModel):
     approved: bool
 
 
-def create_app(path: str, steps: Steps | None = None) -> FastAPI:
+def create_app(
+    path: str,
+    steps: Steps | None = None,
+    manuals: Manuals | None = None,
+    warehouse: Warehouse | None = None,
+) -> FastAPI:
     app = FastAPI()
     app.state.path = path
     app.state.steps = steps or StepLog()
+    app.state.manuals = manuals
+    app.state.warehouse = warehouse
 
     @app.middleware("http")
     async def attach_request_id(request: Request, call_next):  # type: ignore[no-untyped-def]
@@ -47,16 +55,34 @@ def create_app(path: str, steps: Steps | None = None) -> FastAPI:
         return _problem(request, 400, "Bad Request", _validation_detail(exc))
 
     @app.post("/v1/runs")
-    def open_run(body: OpenRun) -> JSONResponse:
+    def open_run(body: OpenRun, request: Request) -> JSONResponse:
         thread_id = uuid4().hex
-        run = start_run(app.state.path, thread_id, body.question, body.role, steps=app.state.steps)
+        try:
+            run = start_run(
+                app.state.path,
+                thread_id,
+                body.question,
+                body.role,
+                manuals=app.state.manuals,
+                warehouse=app.state.warehouse,
+                steps=app.state.steps,
+            )
+        except ReadUnavailable:
+            return _problem(request, 503, "Service Unavailable", "the read is unavailable")
         _log(run)
         return JSONResponse(_body(run))
 
     @app.post("/v1/runs/{thread_id}/approval")
     def approve(thread_id: str, body: Approval, request: Request) -> JSONResponse:
         try:
-            run = decide(app.state.path, thread_id, body.approved, steps=app.state.steps)
+            run = decide(
+                app.state.path,
+                thread_id,
+                body.approved,
+                manuals=app.state.manuals,
+                warehouse=app.state.warehouse,
+                steps=app.state.steps,
+            )
         except ValueError:
             return _problem(request, 404, "Not Found", "unknown thread")
         _log(run)

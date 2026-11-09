@@ -54,6 +54,14 @@ curl -s -X POST localhost:8000/v1/runs/ID/approval \
 
 The first body has `"status": "waiting"`. The second, after a yes, has `"status": "committed"`.
 
+## Live reads
+
+`python -m latch` ignores `LATCH_MANUALS_URL` and `LATCH_WAREHOUSE_URL`. The API uses a URL when it is set. A manuals URL receives `POST /v1/answers` with `question` and `role`, and the draft is the first citation `excerpt`. A warehouse URL receives `POST /v1/answers` with `question`, and the draft is the `value` string. A refusal is an empty hit. A peer that does not answer is HTTP 503. No API key is sent.
+
+```bash
+LATCH_MANUALS_URL=http://127.0.0.1:8001 LATCH_WAREHOUSE_URL=http://127.0.0.1:8002 python -m latch.api
+```
+
 ## Contributing
 
 Open a pull request against `main`. The `test` check has to pass before merge.
